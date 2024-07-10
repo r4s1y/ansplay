@@ -7,7 +7,7 @@
     - name: Ping a remote host from IOS XR device
       iosxr_command:
         commands:
-          - ping 192.168.33.1
+          - ping 10.0.16.251
       register: ping_output
 
     - name: Display ping result
