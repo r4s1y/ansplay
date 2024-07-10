@@ -1,0 +1,16 @@
+---
+- name: Test Ping to IOS XR Device
+  hosts: cisco
+  gather_facts: no
+
+  tasks:
+    - name: Ping a remote host from IOS XR device
+      iosxr_command:
+        commands:
+          - ping 192.168.33.1
+      register: ping_output
+
+    - name: Display ping result
+      debug:
+        var: ping_output.stdout
+
