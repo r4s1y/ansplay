@@ -1,0 +1,15 @@
+---
+- name: Run Command on Cisco IOS XE Device
+  hosts: ciscoios
+  gather_facts: no
+
+  tasks:
+    - name: Execute show version command
+      ios_command:
+        commands:
+          - show version
+      register: show_version_output
+
+    - name: Print show version output
+      debug:
+        msg: "{{ show_version_output.stdout }}"
