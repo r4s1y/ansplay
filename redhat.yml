@@ -1,8 +1,13 @@
 ---
-- name: Ping 8.8.8.8 from Red Hat Server
-  hosts: redhat  # Assuming you run this playbook on the Red Hat server itself
+- name: Ping test to 8.8.8.8 from Red Hat servers
+  hosts: redhat
+  become: yes
   tasks:
     - name: Ping 8.8.8.8
-      ping:
-          count: 3
-          dest: 8.8.8.8
+      ansible.builtin.command:
+        cmd: ping -c 4 192.168.33.1
+      register: ping_result
+
+    - name: Display ping result
+      debug:
+        var: ping_result.stdout
