@@ -1,6 +1,6 @@
 ---
 - name: Test Ping to IOS XR Device
-  hosts: 192.168.33.204
+  hosts: cisco
   gather_facts: no
 
   tasks:
