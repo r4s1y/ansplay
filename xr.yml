@@ -4,6 +4,7 @@
   gather_facts: no
   vars:
     ANSIBLE_PARAMIKO_HOST_KEY_AUTO_ADD: True
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
   tasks:
     - name: Ping a remote host from IOS 
