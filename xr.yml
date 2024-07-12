@@ -2,6 +2,8 @@
 - name: Test Ping to IOS XR Device
   hosts: procisco
   gather_facts: no
+  vars:
+    ANSIBLE_PARAMIKO_HOST_KEY_AUTO_ADD: True
 
   tasks:
     - name: Ping a remote host from IOS 
