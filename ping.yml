@@ -13,4 +13,12 @@
     - name: Display ping result
       debug:
         var: ping_output.stdout
+    
+    - name: Add remote host key to known_hosts
+      known_hosts:
+        path: ~/.ssh/known_hosts
+        name: 192.168.33.204
+        key: "b'c4e70dfdcd4fa96e403819de1feaf232'."
+    
+    
 
