@@ -1,0 +1,8 @@
+---
+- name: Ping 8.8.8.8 from Red Hat Server
+  hosts: redhat  # Assuming you run this playbook on the Red Hat server itself
+  tasks:
+    - name: Ping 8.8.8.8
+      ping:
+          count: 3
+          dest: 8.8.8.8
