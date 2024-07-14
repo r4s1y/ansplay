@@ -2,6 +2,8 @@
 - name: Test Ping to IOS XR Device
   hosts: cisco
   gather_facts: no
+  environment:
+    ANSIBLE_LIBRARY: /usr/share/ansible/plugins/modules
   vars:
     ANSIBLE_PARAMIKO_HOST_KEY_AUTO_ADD: True
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
