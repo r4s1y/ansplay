@@ -6,7 +6,7 @@
     - name: Retrieve BGP neighbor status
       iosxr_command:
         commands:
-          - show bgp neighbors {{ bgp_peer }}
+          - show bgp neighbors 10.0.17.1
       register: bgp_status
 
     - name: Parse BGP neighbor status
