@@ -17,8 +17,12 @@
     
 
     - name: Print message when condition is Active
-      debug:
-        msg: "{{ inventory_hostname }} bgp peer status with 10.0.17.1 is Active"
+      slack:
+          token: "https://hooks.slack.com/services/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"
+          msg: "{{ inventory_hostname }} bgp peer status with 10.0.17.1 is Active"
+          channel: "#test"
+          username: "Ansible"
+          
       when: bgp_state == ['Active']
     
     - name: Print message when condition is Established
