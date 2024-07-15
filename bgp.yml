@@ -6,7 +6,7 @@
     - name: Retrieve BGP neighbor status
       iosxr_command:
         commands:
-          - show bgp neighbors {{ bgp_peer }}
+          - show bgp neighbors 10.0.17.1
       register: bgp_status
 
     - name: Parse BGP neighbor status
@@ -17,17 +17,17 @@
 
     - name: Print message when condition is Active
       debug:
-        msg: "{{ inventory_hostname }} bgp peer status with {{bgp_peer}} is Active"
+        msg: "{{ inventory_hostname }} bgp peer status with 10.0.17.1 is Active"
       when: bgp_state == ['Active']
     
     - name: Print message when condition is Established
       debug:
-        msg: "{{ inventory_hostname }} bgp peer status with {{bgp_peer}} is Established"
+        msg: "{{ inventory_hostname }} bgp peer status with 10.0.17.1 is Established"
       when: bgp_state == ['Established']
 
     - name: Print message when condition is Idle
       debug:
-        msg: "{{ inventory_hostname }} bgp peer status with {{bgp_peer}} is Idle"
+        msg: "{{ inventory_hostname }} bgp peer status with 10.0.17.1 is Idle"
       when: bgp_state == ['Idle']
 
 
