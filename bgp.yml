@@ -1,6 +1,6 @@
 ---
 - name: Monitor BGP peer status on Cisco IOS XR
-  hosts: XR4router.yahoo.com
+  hosts: cisco
   gather_facts: no
   connection: network_cli
   tasks:
