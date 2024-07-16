@@ -17,7 +17,7 @@
 
     - name: Print message when condition is Active
       uri:
-         url: "https://hooks.slack.com/services/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"
+         url: "https://hooks.slack.com/services/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"
          method: POST
          headers:
            Content-Type: "application/json"
