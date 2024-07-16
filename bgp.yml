@@ -17,14 +17,15 @@
 
     - name: Print message when condition is Active
       uri:
-         url: "https://hooks.slack.com/services/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"
+         url: "https://hooks.slack.com/services/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"
          method: POST
          headers:
            Content-Type: "application/json"
          body: >
           {
             "text": "{{ inventory_hostname }}",
-            "text": "{{ bgp_state }}"
+            "text": "{{ bgp_state }}",
+            "text": "ITS DOWN"
           }
          body_format: json
          return_content: yes
