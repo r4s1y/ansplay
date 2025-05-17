@@ -1,43 +1,30 @@
 ---
-- name: Backup, validate and apply interface description on IOS XR
+- name: Configure IOS XR interface with backup, validate, commit/rollback
   hosts: cisco
   gather_facts: no
   connection: network_cli
-  become: yes
-
   vars:
-    backup_dir: /tmp/ansible_backups
-    backup_file: "{{ backup_dir }}/{{ inventory_hostname }}_running-config_{{ ansible_date_time.iso8601_basic_short }}.cfg"
+    backup_path: "/tmp/ansible_backups/{{ inventory_hostname }}-running-config.backup"
 
   tasks:
 
-    - name: Ensure backup directory exists on control node
-      delegate_to: localhost
-      file:
-        path: "{{ backup_dir }}"
-        state: directory
-        mode: '0755'
-
-    - name: Backup running config from device to control node
+    - name: Backup running config
       iosxr_command:
         commands:
           - show running-config
       register: running_config
 
-    - name: Save running config backup on control node
-      delegate_to: localhost
+    - name: Save backup config to control node
       copy:
         content: "{{ running_config.stdout[0] }}"
-        dest: "{{ backup_file }}"
+        dest: "{{ backup_path }}"
+      delegate_to: localhost
 
-    - name: Configure interface description GigabitEthernet0/0/0/0 to "test" (candidate config)
+    - name: Load candidate config (do not commit yet)
       iosxr_config:
         lines:
           - interface GigabitEthernet0/0/0/0
           - description test
-        diff_against: running
-        diff_ignore_lines:
-          - '.*timestamp.*'    # ignore lines like timestamps
         commit: no
         rollback: yes
       register: candidate_result
@@ -50,11 +37,11 @@
       failed_when: "'Commit failed' in validation_result.stdout[0]"
 
     - name: Commit config if validation passed
-      iosxr_commit:
-        comment: "Set interface description GigabitEthernet0/0/0/0 to test"
+      iosxr_config:
+        commit: yes
       when: validation_result is succeeded
 
     - name: Rollback config if validation failed
-      iosxr_commit:
+      iosxr_config:
         rollback: yes
       when: validation_result is failed
