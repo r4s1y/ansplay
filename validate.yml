@@ -1,48 +1,52 @@
 ---
-- name: Configure IOS XR with backup, validate, and conditional commit
+- name: Change interface description safely on IOS XR
   hosts: cisco
   gather_facts: no
   connection: network_cli
-
   vars:
-    backup_path: "/tmp/ansible_backups/{{ inventory_hostname }}-running-config.backup"
-
+    backup_dir: "/tmp/ansible_backups"
+    interface_name: "GigabitEthernet0/0/0/0"
+    new_description: "test"
+    timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
   tasks:
-    - name: Backup current running-config
-      iosxr_command:
-        commands:
-          - show running-config
-      register: running_config
 
-    - name: Save backup to control node
-      copy:
-        content: "{{ running_config.stdout[0] }}"
-        dest: "{{ backup_path }}"
-      delegate_to: localhost
+  - name: Ensure backup directory exists on control node
+    delegate_to: localhost
+    file:
+      path: "{{ backup_dir }}"
+      state: directory
+      mode: '0777'
 
-    - name: Load candidate config (not committed)
-      iosxr_config:
-        lines:
-          - interface GigabitEthernet0/0/0/0
-          - description test
-        comment: "Set interface description to test"
-        replace: line
+  - name: Backup current running config
+    iosxr_command:
+      commands: "show running-config"
+    register: running_config
 
-    - name: Validate config (dry run)
-      iosxr_command:
-        commands:
-          - commit validate
-      register: validation_result
-      failed_when: "'Aborted' in validation_result.stdout[0] or 'Failed' in validation_result.stdout[0]"
+  - name: Save backup to file
+    delegate_to: localhost
+    copy:
+      content: "{{ running_config.stdout[0] }}"
+      dest: "{{ backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}.cfg"
 
-    - name: Commit config if validation succeeded
-      iosxr_command:
-        commands:
-          - commit
-      when: validation_result is succeeded
+  - name: Load candidate config (not committed)
+    iosxr_config:
+      lines:
+        - "description {{ new_description }}"
+      parents: "interface {{ interface_name }}"
+      replace: line
+      comment: "Updated interface description"
+    register: candidate_config
 
-    - name: Rollback config if validation failed
-      iosxr_command:
-        commands:
-          - rollback configuration
-      when: validation_result is failed
+  - name: Validate the configuration
+    iosxr_command:
+      commands: "show configuration failed"
+    register: validation_output
+
+  - name: Fail if there are validation errors
+    fail:
+      msg: "Validation failed. Aborting commit."
+    when: validation_output.stdout[0] != ""
+
+  - name: Commit config if validation passed
+    iosxr_config:
+      commit: yes
