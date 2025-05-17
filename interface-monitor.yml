@@ -1,0 +1,28 @@
+---
+- name: Monitor all interface link statuses on IOS XR
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Get all interfaces line protocol statuses
+      iosxr_command:
+        commands:
+          - show interfaces | include line protocol
+      register: interfaces_status
+
+    - name: Parse and show interface statuses
+      vars:
+        interface_lines: "{{ interfaces_status.stdout[0].split('\n') }}"
+      debug:
+        msg: |
+          {% for line in interface_lines %}
+            {% set iface = line.split(' ')[0] %}
+            {% set status = line | lower %}
+            Interface {{ iface }} status:
+              {% if 'line protocol is up' in status %}
+                UP
+              {% else %}
+                DOWN
+              {% endif %}
+          {% endfor %}
