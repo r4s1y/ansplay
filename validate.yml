@@ -1,47 +1,48 @@
 ---
-- name: Configure IOS XR interface with backup, validate, commit/rollback
+- name: Configure IOS XR with backup, validate, and conditional commit
   hosts: cisco
   gather_facts: no
   connection: network_cli
+
   vars:
     backup_path: "/tmp/ansible_backups/{{ inventory_hostname }}-running-config.backup"
 
   tasks:
-
-    - name: Backup running config
+    - name: Backup current running-config
       iosxr_command:
         commands:
           - show running-config
       register: running_config
 
-    - name: Save backup config to control node
+    - name: Save backup to control node
       copy:
         content: "{{ running_config.stdout[0] }}"
         dest: "{{ backup_path }}"
       delegate_to: localhost
 
-    - name: Load candidate config (do not commit yet)
+    - name: Load candidate config (not committed)
       iosxr_config:
         lines:
           - interface GigabitEthernet0/0/0/0
           - description test
-        commit: no
-        rollback: yes
-      register: candidate_result
+        comment: "Set interface description to test"
+        replace: line
 
-    - name: Validate candidate config
+    - name: Validate config (dry run)
       iosxr_command:
         commands:
           - commit validate
       register: validation_result
-      failed_when: "'Commit failed' in validation_result.stdout[0]"
+      failed_when: "'Aborted' in validation_result.stdout[0] or 'Failed' in validation_result.stdout[0]"
 
-    - name: Commit config if validation passed
-      iosxr_config:
-        commit: yes
+    - name: Commit config if validation succeeded
+      iosxr_command:
+        commands:
+          - commit
       when: validation_result is succeeded
 
     - name: Rollback config if validation failed
-      iosxr_config:
-        rollback: yes
+      iosxr_command:
+        commands:
+          - rollback configuration
       when: validation_result is failed
