@@ -22,11 +22,12 @@
 
     - name: Ensure backup directory exists on control node
       delegate_to: localhost
+      become: yes
       file:
         path: "{{ backup_dir }}"
         state: directory
         mode: '0755'
-        become: yes
+        
 
     - name: Save running config to local file on control node
       delegate_to: localhost
