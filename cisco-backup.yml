@@ -1,24 +1,34 @@
 ---
-- name: Backup Cisco IOS XR configurations locally
+- name: Backup Cisco IOS XR running configuration
   hosts: cisco
   gather_facts: no
   connection: network_cli
 
+  vars:
+    backup_dir: /home/rasty
+
   tasks:
-    - name: Run show running-config on device
+    - name: Get current date on control node
+      delegate_to: localhost
+      command: date +%Y-%m-%d
+      register: current_date
+      changed_when: false
+
+    - name: Get running config from device
       iosxr_command:
         commands:
           - show running-config
       register: running_config
 
-    - name: Get current date on control node
+    - name: Ensure backup directory exists on control node
       delegate_to: localhost
-      ansible.builtin.command: date +%Y-%m-%d
-      register: current_date
-      changed_when: false
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: '0755'
 
     - name: Save running config to local file on control node
       delegate_to: localhost
       copy:
         content: "{{ running_config.stdout[0] }}"
-        dest: "/home/rasty/{{ inventory_hostname }}-running-config-{{ current_date.stdout }}.txt"
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}-running-config-{{ current_date.stdout }}.txt"
