@@ -1,5 +1,5 @@
 ---
-- name: Safely change IOS XR interface description
+- name: Change interface description with validation and backup
   hosts: cisco
   gather_facts: no
   connection: network_cli
@@ -10,41 +10,39 @@
     timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
   tasks:
 
-  - name: Ensure backup directory exists
-    delegate_to: localhost
-    file:
-      path: "{{ backup_dir }}"
-      state: directory
-      mode: '0777'
+    - name: Ensure backup directory exists
+      delegate_to: localhost
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: '0777'
 
-  - name: Backup current running config
-    iosxr_command:
-      commands: "show running-config"
-    register: running_config
+    - name: Backup current running config
+      iosxr_command:
+        commands: "show running-config"
+      register: running_config
 
-  - name: Save config backup to file
-    delegate_to: localhost
-    copy:
-      content: "{{ running_config.stdout[0] }}"
-      dest: "{{ backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}.cfg"
+    - name: Save config backup to file
+      delegate_to: localhost
+      copy:
+        content: "{{ running_config.stdout[0] }}"
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}.cfg"
 
-  - name: Load candidate config (not committed yet)
-    iosxr_config:
-      lines:
-        - "description {{ new_description }}"
-      parents: "interface {{ interface_name }}"
-      comment: "Changing interface description"
+    - name: Apply interface description with auto-commit
+      iosxr_config:
+        lines:
+          - "description {{ new_description }}"
+        parents: "interface {{ interface_name }}"
+        exclusive: true  # This handles commit internally
+        backup: false
+        comment: "Updated description on {{ interface_name }}"
 
-  - name: Validate candidate config
-    iosxr_command:
-      commands: "show configuration failed"
-    register: validation_result
+    - name: Validate config (check for errors)
+      iosxr_command:
+        commands: "show configuration failed"
+      register: validation_result
 
-  - name: Fail if config has validation errors
-    fail:
-      msg: "Validation failed. Aborting commit.\nDetails: {{ validation_result.stdout[0] }}"
-    when: validation_result.stdout[0] != ""
-
-  - name: Manually commit candidate config
-    iosxr_command:
-      commands: "commit"
+    - name: Fail if configuration validation shows errors
+      fail:
+        msg: "Validation failed. Output:\n{{ validation_result.stdout[0] }}"
+      when: validation_result.stdout[0] != ""
