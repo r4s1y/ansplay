@@ -1,5 +1,5 @@
 ---
-- name: Change interface description safely on IOS XR
+- name: Safely change IOS XR interface description
   hosts: cisco
   gather_facts: no
   connection: network_cli
@@ -10,7 +10,7 @@
     timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
   tasks:
 
-  - name: Ensure backup directory exists on control node
+  - name: Ensure backup directory exists
     delegate_to: localhost
     file:
       path: "{{ backup_dir }}"
@@ -22,31 +22,29 @@
       commands: "show running-config"
     register: running_config
 
-  - name: Save backup to file
+  - name: Save config backup to file
     delegate_to: localhost
     copy:
       content: "{{ running_config.stdout[0] }}"
       dest: "{{ backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}.cfg"
 
-  - name: Load candidate config (not committed)
+  - name: Load candidate config (not committed yet)
     iosxr_config:
       lines:
         - "description {{ new_description }}"
       parents: "interface {{ interface_name }}"
-      replace: line
-      comment: "Updated interface description"
-    register: candidate_config
+      comment: "Changing interface description"
 
-  - name: Validate the configuration
+  - name: Validate candidate config
     iosxr_command:
       commands: "show configuration failed"
-    register: validation_output
+    register: validation_result
 
-  - name: Fail if there are validation errors
+  - name: Fail if config has validation errors
     fail:
-      msg: "Validation failed. Aborting commit."
-    when: validation_output.stdout[0] != ""
+      msg: "Validation failed. Aborting commit.\nDetails: {{ validation_result.stdout[0] }}"
+    when: validation_result.stdout[0] != ""
 
-  - name: Commit config if validation passed
-    iosxr_config:
-      commit: yes
+  - name: Manually commit candidate config
+    iosxr_command:
+      commands: "commit"
