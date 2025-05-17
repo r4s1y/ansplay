@@ -1,7 +1,7 @@
 ---
 - name: Update APT repositories on Ubuntu
   hosts: ubuntu_server01
-  become: yes  # <-- this is required to run apt update
+  become: true  # <-- this is required to run apt update
   tasks:
     - name: Update apt package index
       apt:
